@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Ciberus';
+  src: url('/fonts/CiberusDemo-Regular-BF6a793f60ee81a.ttf') format('truetype'),
+       url('/fonts/Ciberus.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'CiberusDemo';
+  src: url('/fonts/CiberusDemo-Regular-BF6a793f60ee81a.ttf') format('truetype'),
+       url('/fonts/Ciberus.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jeanoti';
+  src: url('/fonts/JeanotiRegular-PV6w2-BF6a5ddca805dfc.otf') format('opentype'),
+       url('/fonts/Jeanoti.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'StenzGraxon';
+  src: url('/fonts/StenzGraxonProCoolFancyDesign-2v2p3.otf') format('opentype'),
+       url('/fonts/StenzGraxon.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'BehindTheNineties';
+  src: url('/fonts/Behind-The-Nineties-Sans-Rg-BF6a6dbd784a567.otf') format('opentype'),
+       url('/fonts/BehindTheNineties-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'BehindTheNineties';
+  src: url('/fonts/Behind-The-Nineties-Sans-Md-BF6a6dbd7842e9f.otf') format('opentype'),
+       url('/fonts/BehindTheNineties-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'BehindTheNineties';
+  src: url('/fonts/Behind-The-Nineties-Sans-Bd-BF6a6dbd784683b.otf') format('opentype'),
+       url('/fonts/BehindTheNineties-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --canvas: #ddecfa;
+  --surface: #eaf3fb;
+  --ink: #0d1e38;
+  --muted-ink: #3b587d;
+  --line: #b9d2eb;
+  --brand: #2c4e7b;
+  --brand-dark: #1a3356;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: #ddecfa;
+}
+
+body {
+  @apply bg-canvas text-ink font-stenz antialiased overflow-x-hidden;
+  letter-spacing: 0.02em;
+  line-height: 1.65;
+  background-color: #ddecfa;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-ciberus tracking-wide text-ink;
+}
+
+.button-primary {
+  @apply inline-flex items-center justify-center rounded-pill bg-brand px-6 py-3 text-sm font-nineties font-semibold text-white transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-brand-dark hover:shadow-lg active:translate-y-0 cursor-pointer;
+  letter-spacing: 0.04em;
+}
+
+.button-secondary {
+  @apply inline-flex items-center justify-center rounded-pill border border-line bg-surface/80 backdrop-blur-md px-6 py-3 text-sm font-nineties font-semibold text-ink transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-brand hover:text-brand hover:shadow-md active:translate-y-0 cursor-pointer;
+  letter-spacing: 0.04em;
+}
+
+.card {
+  @apply rounded-large border border-line bg-surface/90 backdrop-blur-sm p-6 shadow-sm transition-all duration-300;
+}
+
+/* Subtle organic grain effect */
+.celestial-grain {
+  background-image: radial-gradient(rgba(13, 30, 56, 0.035) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #ddecfa;
+}
+::-webkit-scrollbar-thumb {
+  background: #9abedb;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #6494c2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
