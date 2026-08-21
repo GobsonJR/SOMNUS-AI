@@ -1,84 +1,75 @@
-"""Train XGBoost models for N2 binary and 3-class stage classification."""
-
-from __future__ import annotations
-
-import argparse
-import json
-from pathlib import Path
-
 import pandas as pd
+import numpy as np
+import os
+import glob
 import xgboost as xgb
-from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.model_selection import train_test_split
+from scipy.ndimage import median_filter
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
-from features import FEATURE_COLUMNS
+features_folder = r"DATASET\Enriched_Features"
+all_files = sorted(glob.glob(os.path.join(features_folder, "*.csv")))
 
+split_idx = int(len(all_files) * 0.8)
+train_files = all_files[:split_idx]
+test_files = all_files[split_idx:]
 
-def load_data(path: Path) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
-    df = pd.read_csv(path)
-    X = df[FEATURE_COLUMNS].fillna(0.0)
-    y_n2 = df["label_n2"]
-    y_stage = df["label_stage"]
-    return X, y_n2, y_stage
+print(f"Loading {len(train_files)} training files and {len(test_files)} testing files...")
+train_df = pd.concat([pd.read_csv(f) for f in train_files], ignore_index=True).dropna()
+test_dfs = [pd.read_csv(f).dropna() for f in test_files]
 
+X_train = train_df.drop(columns=['Target_Label'])
+y_train = (train_df['Target_Label'] == 'N2').astype(int)
 
-def train_models(X_train, y_n2_train, y_stage_train):
-    model_n2 = xgb.XGBClassifier(
-        objective="binary:logistic",
-        n_estimators=300,
-        max_depth=6,
-        learning_rate=0.05,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        random_state=42,
-    )
-    model_n2.fit(X_train, y_n2_train)
+# Class weight balancing
+scale_weight = (y_train == 0).sum() / (y_train == 1).sum()
 
-    model_stage = xgb.XGBClassifier(
-        objective="multi:softprob",
-        num_class=3,
-        n_estimators=300,
-        max_depth=6,
-        learning_rate=0.05,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        random_state=42,
-    )
-    model_stage.fit(X_train, y_stage_train)
-    return model_n2, model_stage
+print("Training Tuned XGBoost Classifier...")
+model = xgb.XGBClassifier(
+    n_estimators=400,
+    learning_rate=0.025,
+    max_depth=8,
+    min_child_weight=3,
+    gamma=0.1,
+    subsample=0.85,
+    colsample_bytree=0.85,
+    scale_pos_weight=scale_weight,
+    random_state=42,
+    eval_metric='logloss',
+    n_jobs=-1
+)
 
+model.fit(X_train, y_train)
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--input", required=True, help="Path to processed epochs CSV")
-    parser.add_argument("--output", default="artifacts", help="Output directory")
-    args = parser.parse_args()
+# Evaluate per-subject with temporal smoothing
+raw_predictions = []
+smoothed_predictions = []
+actual_labels = []
 
-    output_dir = Path(args.output)
-    output_dir.mkdir(parents=True, exist_ok=True)
+for subject_df in test_dfs:
+    X_sub = subject_df.drop(columns=['Target_Label'])
+    y_sub = (subject_df['Target_Label'] == 'N2').astype(int).values
+    
+    # Raw prediction probabilities
+    preds_raw = model.predict(X_sub)
+    
+    # 3-Epoch Temporal Median Smoothing (Removes single-epoch physiological noise)
+    preds_smoothed = median_filter(preds_raw, size=3, mode='nearest')
+    
+    raw_predictions.extend(preds_raw)
+    smoothed_predictions.extend(preds_smoothed)
+    actual_labels.extend(y_sub)
 
-    X, y_n2, y_stage = load_data(Path(args.input))
-    X_train, X_test, yn2_train, yn2_test, ys_train, ys_test = train_test_split(
-        X, y_n2, y_stage, test_size=0.2, random_state=42, stratify=y_n2
-    )
+raw_acc = accuracy_score(actual_labels, raw_predictions)
+smoothed_acc = accuracy_score(actual_labels, smoothed_predictions)
 
-    model_n2, model_stage = train_models(X_train, yn2_train, ys_train)
+print(f"\n==========================================")
+print(f"Raw Model Accuracy:      {raw_acc * 100:.2f}%")
+print(f"With Temporal Smoothing: {smoothed_acc * 100:.2f}%")
+print(f"==========================================\n")
 
-    print("N2 classifier:")
-    print(classification_report(yn2_test, model_n2.predict(X_test)))
-    print(confusion_matrix(yn2_test, model_n2.predict(X_test)))
+print("--- Final Classification Report (Smoothed) ---")
+print(classification_report(actual_labels, smoothed_predictions, target_names=['Non-N2', 'N2']))
 
-    print("Stage classifier:")
-    print(classification_report(ys_test, model_stage.predict(X_test)))
-    print(confusion_matrix(ys_test, model_stage.predict(X_test)))
-
-    import joblib
-
-    joblib.dump(model_n2, output_dir / "model_n2.joblib")
-    joblib.dump(model_stage, output_dir / "model_stage.joblib")
-    (output_dir / "feature_columns.json").write_text(json.dumps(FEATURE_COLUMNS, indent=2))
-    print(f"Saved joblib models to {output_dir}")
-
-
-if __name__ == "__main__":
-    main()
+# Save model
+model.save_model("binary_sleep_model.json")
+print("Model saved to binary_sleep_model.json!")
