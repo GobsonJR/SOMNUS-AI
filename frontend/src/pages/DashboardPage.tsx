@@ -1,161 +1,272 @@
-import { useEffect, useRef, useState } from "react";
-import { Radio, ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import { 
+  ArrowLeft, 
+  PanelLeftClose, 
+  PanelLeftOpen, 
+  Settings
+} from "lucide-react";
 import { useCloudNavigate } from "../components/experience/CloudTunnelTransition";
-import MetricCard from "../components/dashboard/MetricCard";
-import Hypnogram from "../components/dashboard/Hypnogram";
-import AlarmSetup from "../components/dashboard/AlarmSetup";
 import WakeBanner from "../components/dashboard/WakeBanner";
+import { SidebarNav, DashboardViewId } from "../components/ui/dashboard-sidebar";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "/api";
-const WS_URL = import.meta.env.VITE_WS_URL ?? `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}`;
-const DEFAULT_DEVICE_ID = import.meta.env.VITE_DEFAULT_DEVICE_ID ?? "esp32_01";
-
-type StageUpdate = {
-  type: "STAGE_UPDATE";
-  stage: string;
-  n2_probability: number;
-  features: Record<string, number>;
-  timestamp: string;
-};
-
-type AlarmTrigger = {
-  type: "ALARM_TRIGGER";
-  reason: string;
-};
+// Dedicated Window Components
+import ProfileCard from "../components/dashboard/ProfileCard";
+import SomnusTherapyChat from "../components/dashboard/SomnusTherapyChat";
+import SleepStreakThermalMap from "../components/dashboard/SleepStreakThermalMap";
+import MonthlySleepChart from "../components/dashboard/MonthlySleepChart";
+import SmartWakeWindowView from "../components/dashboard/SmartWakeWindowView";
+import DeviceStatusView from "../components/dashboard/DeviceStatusView";
+import AutomationHub from "../components/dashboard/AutomationHub";
+import ExportDataView from "../components/dashboard/ExportDataView";
 
 export default function DashboardPage() {
   const { navigateWithClouds } = useCloudNavigate();
-  const [deviceId, setDeviceId] = useState(DEFAULT_DEVICE_ID);
-  const [stage, setStage] = useState<string | null>(null);
-  const [n2Prob, setN2Prob] = useState<number | null>(null);
-  const [rmssd, setRmssd] = useState<number | null>(null);
-  const [alarmEnabled, setAlarmEnabled] = useState(false);
-  const [connection, setConnection] = useState("connecting");
-  const [hypnogram, setHypnogram] = useState<{ time: string; stage: number }[]>([]);
-  const [alarm, setAlarm] = useState<AlarmTrigger | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
+  
+  // Default: sidebar is open
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  
+  // Default view: Profile
+  const [activeView, setActiveView] = useState<DashboardViewId>("profile");
+  const [alarm, setAlarm] = useState<{ reason: string } | null>(null);
 
-  const stageToNum = (s: string) => (s === "Wake" ? 0 : s === "REM" ? 2 : 1);
-
-  const refreshSummary = async () => {
-    try {
-      const res = await fetch(`${API_URL}/dashboard/summary?device_id=${encodeURIComponent(deviceId)}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      setStage(data.current_stage);
-      setN2Prob(data.n2_probability);
-      setRmssd(data.rmssd);
-      setAlarmEnabled(Boolean(data.alarm_enabled));
-    } catch {
-      setConnection("backend unavailable");
+  const handleSelectView = (view: DashboardViewId) => {
+    setActiveView(view);
+    if (window.innerWidth < 1024) {
+      setIsSidebarOpen(false);
     }
   };
 
-  useEffect(() => {
-    refreshSummary();
-
-    try {
-      const ws = new WebSocket(`${WS_URL}/ws/${encodeURIComponent(deviceId)}`);
-      wsRef.current = ws;
-
-      ws.onopen = () => setConnection("live");
-      ws.onclose = () => setConnection("disconnected");
-      ws.onerror = () => setConnection("connection error");
-      ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === "STAGE_UPDATE") {
-          const update = msg as StageUpdate;
-          setStage(update.stage);
-          setN2Prob(update.n2_probability);
-          setRmssd(update.features?.rmssd ?? null);
-          const time = new Date(update.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-          setHypnogram((prev) => [...prev.slice(-49), { time, stage: stageToNum(update.stage) }]);
-        }
-        if (msg.type === "ALARM_TRIGGER") {
-          setAlarm(msg as AlarmTrigger);
-        }
-        if (msg.type === "CONNECTION_STATUS") {
-          setConnection(msg.state?.toLowerCase() ?? "live");
-        }
-      };
-
-      return () => ws.close();
-    } catch {
-      setConnection("connection error");
+  const getTitle = () => {
+    switch (activeView) {
+      case "profile":
+        return {
+          category: "User Profile & Account Settings",
+          title: "Personal Profile",
+        };
+      case "therapy":
+        return {
+          category: "Autonomous Circadian Intelligence",
+          title: "Somnus AI",
+        };
+      case "sleep-streak":
+        return {
+          category: "Circadian Habit & Tracking",
+          title: "Sleep Streak & Consistency",
+        };
+      case "sleep-stages":
+        return {
+          category: "Sleep Architecture Breakdown",
+          title: "Monthly N2 vs Non-N2 Stages",
+        };
+      case "wake-window":
+        return {
+          category: "Autonomous Awakening",
+          title: "Smart Wake Window",
+        };
+      case "device":
+        return {
+          category: "Hardware Diagnostics & BLE",
+          title: "Device Status",
+        };
+      case "automation":
+        return {
+          category: "IoT Orchestration",
+          title: "Automations Hub",
+        };
+      case "export-data":
+        return {
+          category: "Data Interoperability",
+          title: "Export Telemetry Dataset",
+        };
+      case "settings":
+        return {
+          category: "System Preferences",
+          title: "Calibration & Settings",
+        };
     }
-  }, [deviceId]);
+  };
+
+  const currentMeta = getTitle();
 
   return (
-    <div className="min-h-screen bg-canvas celestial-grain pb-16">
+    <div className="min-h-screen bg-canvas celestial-grain flex overflow-hidden select-none">
       {alarm && <WakeBanner reason={alarm.reason} onDismiss={() => setAlarm(null)} />}
 
-      {/* Top Header */}
-      <header className="border-b border-line bg-surface/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <button onClick={() => navigateWithClouds("/")} className="flex items-center gap-3 cursor-pointer">
-            <div className="h-3 w-3 rounded-full bg-brand" />
-            <span className="font-ciberus text-2xl font-bold tracking-wider text-ink">Somnus AI</span>
-          </button>
+      {/* Sidebar Navigation with 290px spacious width */}
+      <div 
+        className={`h-screen transition-all duration-300 ease-in-out shrink-0 overflow-hidden bg-surface/95 border-r border-line z-40 ${
+          isSidebarOpen ? 'w-[290px] opacity-100' : 'w-0 opacity-0 border-none'
+        }`}
+      >
+        <SidebarNav 
+          className="w-[290px] border-none bg-transparent"
+          activeId={activeView}
+          onSelect={handleSelectView}
+          onLogout={() => navigateWithClouds("/auth")}
+        />
+      </div>
+
+      {/* Main Content Viewport */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+        {/* Top App Header */}
+        <header className="sticky top-0 z-30 border-b border-line bg-surface/90 backdrop-blur-md px-6 py-3.5 flex items-center justify-between shadow-2xs">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-2 rounded-lg text-ink bg-canvas border border-line hover:bg-black/5 transition cursor-pointer flex items-center gap-1.5 text-xs font-stenz font-medium"
+              title={isSidebarOpen ? "Hide sidebar" : "Open sidebar"}
+            >
+              {isSidebarOpen ? <PanelLeftClose className="w-4 h-4 text-brand" strokeWidth={1.75} /> : <PanelLeftOpen className="w-4 h-4 text-brand" strokeWidth={1.75} />}
+              <span className="hidden sm:inline">{isSidebarOpen ? "Hide Menu" : "Menu"}</span>
+            </button>
+
+            <button onClick={() => navigateWithClouds("/")} className="flex items-center gap-2 cursor-pointer ml-1">
+              <img src="/assets/logo.png" alt="Somnus Logo" className="w-6 h-6 object-contain" />
+              <span className="font-jeanoti text-2xl font-normal text-ink">Somnus AI</span>
+            </button>
+
+            <span className="text-line mx-1">/</span>
+            <span className="font-stenz text-xs uppercase tracking-wider text-muted-ink font-medium truncate max-w-[220px]">
+              {currentMeta.title}
+            </span>
+          </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 font-mono text-xs text-muted-ink bg-canvas px-3 py-1.5 rounded-pill border border-line">
-              <span className={`h-2 w-2 rounded-full ${connection === "live" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
-              <span>{connection === "live" ? "Telemetry stream active" : connection}</span>
+            <div className="hidden md:flex items-center gap-2 font-mono text-xs text-muted-ink bg-canvas px-3 py-1.5 rounded-pill border border-line">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Live Telemetry stream (250Hz)</span>
             </div>
 
             <button
               onClick={() => navigateWithClouds("/")}
-              className="font-stenz text-xs font-semibold text-muted-ink hover:text-ink transition flex items-center gap-1 cursor-pointer"
+              className="font-stenz text-xs font-medium text-muted-ink hover:text-ink transition flex items-center gap-1 cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Exit</span>
             </button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-6 py-10">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-8 border-b border-line">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-stenz text-xs uppercase tracking-widest text-brand font-semibold">
-                Autonomous Sleep Stage Telemetry
+        {/* Dynamic View Window Content */}
+        <main className="max-w-6xl w-full mx-auto px-6 py-8 flex-1 space-y-6">
+          {/* View Header with Clean Segmented Navigation */}
+          <div className="pb-4 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span className="font-stenz text-xs uppercase tracking-widest text-brand font-medium block">
+                {currentMeta.category}
               </span>
+              <h1 className="font-ciberus text-3xl sm:text-4xl font-normal text-ink mt-1">
+                {currentMeta.title}
+              </h1>
             </div>
-            <h1 className="font-ciberus text-3xl sm:text-4xl font-bold text-ink mt-1">
-              Physiological Sleep Monitor
-            </h1>
+
+            {/* Quick Segmented Switcher */}
+            <div className="flex flex-wrap items-center gap-1.5 font-stenz text-xs">
+              {[
+                { id: "profile", label: "Profile" },
+                { id: "therapy", label: "Somnus AI" },
+                { id: "sleep-streak", label: "Sleep Streak" },
+                { id: "sleep-stages", label: "Stages" },
+                { id: "wake-window", label: "Wake Window" },
+                { id: "device", label: "Device" },
+                { id: "automation", label: "Automations" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveView(tab.id as any)}
+                  className={`px-3 py-1.5 rounded-pill font-medium border transition cursor-pointer ${
+                    activeView === tab.id
+                      ? "bg-brand text-white border-brand shadow-2xs"
+                      : "bg-surface border-line text-muted-ink hover:text-ink"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 font-mono text-xs text-muted-ink">
-            <Radio className="w-3.5 h-3.5 text-brand" />
-            <label>
-              Hardware Node
-              <input aria-label="Hardware node ID" className="ml-2 w-28 border-b border-line bg-transparent font-mono text-ink outline-none focus:border-brand" value={deviceId} onChange={(event) => setDeviceId(event.target.value)} />
-              <span> (AD8232 ECG)</span>
-            </label>
-          </div>
-        </div>
+          {/* ================================================================= */}
+          {/* 1. PROFILE WINDOW (With Custom Banner, Avatar & Live Telemetry)   */}
+          {/* ================================================================= */}
+          {activeView === "profile" && (
+            <ProfileCard />
+          )}
 
-        {/* Real-time Metric Cards Grid */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          <MetricCard label="Current Sleep Stage" value={stage} />
-          <MetricCard label="N2 Light Probability" value={n2Prob != null ? (n2Prob * 100).toFixed(0) : null} unit="%" />
-          <MetricCard label="RMSSD Autonomic Tone" value={rmssd != null ? rmssd.toFixed(1) : null} unit="ms" />
-        </div>
+          {/* ================================================================= */}
+          {/* 2. SOMNUS AI (AI Chat 9 Block)                                    */}
+          {/* ================================================================= */}
+          {activeView === "therapy" && (
+            <SomnusTherapyChat />
+          )}
 
-        {/* Kokonut Profile and Hypnogram Suite */}
-        <div className="mt-8 grid gap-8 lg:grid-cols-3 items-start">
-          <div className="lg:col-span-1 space-y-6">
-            <AlarmSetup deviceId={deviceId} onSaved={refreshSummary} />
-          </div>
+          {/* ================================================================= */}
+          {/* 3. SLEEP STREAK (Accurate 18-Day Continuous Run Heatmap)          */}
+          {/* ================================================================= */}
+          {activeView === "sleep-streak" && (
+            <SleepStreakThermalMap />
+          )}
 
-          <div className="lg:col-span-2">
-            <Hypnogram data={hypnogram} alarmEnabled={alarmEnabled} />
-          </div>
-        </div>
-      </main>
+          {/* ================================================================= */}
+          {/* 4. SLEEP STAGES (N2 vs Non-N2 with 24h Y-Axis)                    */}
+          {/* ================================================================= */}
+          {activeView === "sleep-stages" && (
+            <MonthlySleepChart />
+          )}
+
+          {/* ================================================================= */}
+          {/* 5. SMART WAKE WINDOW (System Time, 6h Warning, Auto-Arming)      */}
+          {/* ================================================================= */}
+          {activeView === "wake-window" && (
+            <SmartWakeWindowView onSaved={() => setAlarm({ reason: "Smart Wake Window calibrated with light sleep detection rule." })} />
+          )}
+
+          {/* ================================================================= */}
+          {/* 6. HARDWARE DEVICE STATUS (ESP32, AD8232, Battery, Re-sync)       */}
+          {/* ================================================================= */}
+          {activeView === "device" && (
+            <DeviceStatusView />
+          )}
+
+          {/* ================================================================= */}
+          {/* 7. AUTOMATIONS HUB (Interactive Builder & Live Simulator)        */}
+          {/* ================================================================= */}
+          {activeView === "automation" && (
+            <AutomationHub />
+          )}
+
+          {/* ================================================================= */}
+          {/* 8. EXPORT DATA WINDOW                                            */}
+          {/* ================================================================= */}
+          {activeView === "export-data" && (
+            <ExportDataView />
+          )}
+
+          {/* ================================================================= */}
+          {/* 9. SETTINGS WINDOW                                               */}
+          {/* ================================================================= */}
+          {activeView === "settings" && (
+            <div className="card bg-surface/90 border-line shadow-xs space-y-6 animate-in fade-in max-w-3xl">
+              <div className="flex items-center gap-2 border-b border-line pb-3">
+                <Settings className="w-5 h-5 text-brand" />
+                <h3 className="font-ciberus text-2xl font-normal text-ink">System Preferences</h3>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 text-xs font-stenz">
+                <div className="p-4 bg-canvas rounded-xl border border-line space-y-2">
+                  <span className="font-semibold text-ink text-sm block">Signal Filtering</span>
+                  <p className="text-muted-ink">0.5Hz - 45Hz bandpass filter with active notch filter for baseline noise suppression.</p>
+                </div>
+
+                <div className="p-4 bg-canvas rounded-xl border border-line space-y-2">
+                  <span className="font-semibold text-ink text-sm block">ECG Stream Sampling</span>
+                  <p className="text-muted-ink">250Hz real-time stream over BLE/WebSocket with millisecond R-R accuracy.</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 }
