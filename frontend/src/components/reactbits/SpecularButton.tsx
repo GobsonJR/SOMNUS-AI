@@ -141,7 +141,7 @@ const SpecularButton = ({
     if (!btn || !fx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    let renderer: Renderer | null = null;
+    let renderer: any = null;
     try {
       renderer = new Renderer({ alpha: true, premultipliedAlpha: true, antialias: true, dpr });
     } catch {
