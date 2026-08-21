@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import CloudShader from "../reactbits/CloudShader";
+import LogoLoop from "../reactbits/LogoLoop";
+import { techStackLogos } from "../reactbits/TechStackLogos";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -14,7 +16,6 @@ export default function CloudPassageSection() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Create scroll-driven passage animation
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current,
@@ -24,7 +25,6 @@ export default function CloudPassageSection() {
         },
       });
 
-      // 1. Clouds converge in to envelope the viewport, Logo scales & illuminates up
       tl.fromTo(
         [cloudLeftRef.current, cloudRightRef.current],
         { scale: 0.9, opacity: 0.7 },
@@ -33,10 +33,9 @@ export default function CloudPassageSection() {
         .fromTo(
           logoPortalRef.current,
           { scale: 0.4, opacity: 0, y: 100 },
-          { scale: 1.1, opacity: 1, y: 0, ease: "power2.out" },
+          { scale: 1.05, opacity: 1, y: 0, ease: "power2.out" },
           "<0.1"
         )
-        // 2. Clouds part outward and dissolve into the landing page
         .to(
           cloudLeftRef.current,
           { x: -350, opacity: 0.2, scale: 1.6, ease: "power1.in" },
@@ -54,7 +53,7 @@ export default function CloudPassageSection() {
         )
         .to(
           logoPortalRef.current,
-          { y: -50, opacity: 0.95 },
+          { y: -30, opacity: 0.95 },
           "<"
         );
     }, sectionRef);
@@ -65,7 +64,7 @@ export default function CloudPassageSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-[95vh] flex flex-col items-center justify-center overflow-hidden celestial-grain bg-canvas select-none py-20"
+      className="relative min-h-[95vh] flex flex-col items-center justify-between overflow-hidden celestial-grain bg-canvas select-none py-16"
     >
       {/* Dynamic Aceternity WebGL Cloud Shader Background */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-85">
@@ -108,26 +107,42 @@ export default function CloudPassageSection() {
         />
       </div>
 
-      {/* Central Illuminating Somnus Logo rising through the cloud shader passage */}
+      <div className="h-6" />
+
+      {/* Central Illuminating Somnus Logo rising through the cloud passage */}
       <div
         ref={logoPortalRef}
-        className="relative z-30 flex flex-col items-center justify-center text-center opacity-0"
+        className="relative z-30 flex flex-col items-center justify-center text-center opacity-0 my-auto"
       >
         <div className="relative mb-4">
           <div className="absolute -inset-6 rounded-full bg-[#ffffff]/70 blur-2xl animate-pulse" />
           <img
             src="/assets/logo.png"
             alt="Somnus AI Portal Logo"
-            className="relative w-28 h-28 sm:w-36 sm:h-36 object-contain filter drop-shadow-lg"
+            className="relative w-24 h-24 sm:w-32 sm:h-32 object-contain filter drop-shadow-md"
           />
         </div>
 
-        <span className="font-jeanoti text-4xl sm:text-6xl md:text-7xl font-bold tracking-wider text-ink mt-2">
+        <span className="font-jeanoti text-4xl sm:text-6xl md:text-7xl font-normal tracking-wider text-ink mt-2">
           Somnus AI
         </span>
         <span className="font-nineties text-xs uppercase tracking-widest text-muted-ink mt-2">
           Autonomous Sleep Staging Intelligence
         </span>
+      </div>
+
+      {/* Tech Stack LogoLoop Integration Below Logo (GitHub, Vercel, TypeScript, HTML, CSS, React, Tailwind, Docker) */}
+      <div className="relative z-30 w-full max-w-6xl mx-auto py-5 mt-8 border-t border-b border-line/50 overflow-hidden">
+        <LogoLoop
+          logos={techStackLogos}
+          speed={60}
+          direction="left"
+          logoHeight={36}
+          gap={28}
+          fadeOut
+          fadeOutColor="#ddecfa"
+          ariaLabel="Somnus AI Engineering Tech Stack"
+        />
       </div>
     </section>
   );
