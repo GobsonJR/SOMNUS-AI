@@ -1,0 +1,191 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ───────────────────────────────────────────
+   FONT FACES — paths match public/fonts/
+   ─────────────────────────────────────────── */
+
+@font-face {
+  font-family: 'Ciberus';
+  src: url('/fonts/ciberus/CiberusDemo-Regular-BF6a793f60ee81a.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'CiberusDemo';
+  src: url('/fonts/ciberus/CiberusDemo-Regular-BF6a793f60ee81a.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jeanoti';
+  src: url('/fonts/jeanoti/JeanotiRegular-PV6w2-BF6a5ddca805dfc.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JeanotiRegular';
+  src: url('/fonts/jeanoti/JeanotiRegular-PV6w2-BF6a5ddca805dfc.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'StenzGraxon';
+  src: url('/fonts/stenz-graxon/StenzGraxonProCoolFancyDesign-2v2p3.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'BehindTheNineties';
+  src: url('/fonts/behind-the-nineties/Behind-The-Nineties-Sans-Rg-BF6a6dbd784a567.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'BehindTheNineties';
+  src: url('/fonts/behind-the-nineties/Behind-The-Nineties-Sans-Md-BF6a6dbd7842e9f.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'BehindTheNineties';
+  src: url('/fonts/behind-the-nineties/Behind-The-Nineties-Sans-Bd-BF6a6dbd784683b.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ───────────────────────────────────────────
+   DESIGN TOKENS
+   ─────────────────────────────────────────── */
+
+:root {
+  --canvas: #ddecfa;
+  --surface: #eaf3fb;
+  --ink: #0d1e38;
+  --muted-ink: #3b587d;
+  --line: #b9d2eb;
+  --brand: #2c4e7b;
+  --brand-dark: #1a3356;
+}
+
+/* ───────────────────────────────────────────
+   BASE
+   ─────────────────────────────────────────── */
+
+html {
+  scroll-behavior: smooth;
+  background-color: #ddecfa;
+}
+
+body {
+  @apply bg-canvas text-ink antialiased overflow-x-hidden;
+  font-family: 'StenzGraxon', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: 0.02em;
+  line-height: 1.65;
+  background-color: #ddecfa;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply tracking-wide text-ink;
+  font-family: 'Ciberus', 'CiberusDemo', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ───────────────────────────────────────────
+   BRAND / LOGO — Somnus AI uses Jeanoti
+   ─────────────────────────────────────────── */
+
+.logo,
+.brand,
+.somnus-logo {
+  font-family: 'Jeanoti', 'JeanotiRegular', ui-sans-serif, system-ui, sans-serif;
+  font-weight: normal;
+  letter-spacing: 0.04em;
+}
+
+/* ───────────────────────────────────────────
+   COMPONENTS
+   ─────────────────────────────────────────── */
+
+.button-primary {
+  @apply inline-flex items-center justify-center rounded-pill bg-brand px-6 py-3 text-sm font-semibold text-white transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-brand-dark hover:shadow-lg active:translate-y-0 cursor-pointer;
+  font-family: 'BehindTheNineties', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.button-secondary {
+  @apply inline-flex items-center justify-center rounded-pill border border-line bg-surface/80 backdrop-blur-md px-6 py-3 text-sm font-semibold text-ink transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-brand hover:text-brand hover:shadow-md active:translate-y-0 cursor-pointer;
+  font-family: 'BehindTheNineties', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.card {
+  @apply rounded-large border border-line bg-surface/90 backdrop-blur-sm p-6 shadow-sm transition-all duration-300;
+}
+
+/* ───────────────────────────────────────────
+   UTILITIES / EFFECTS
+   ─────────────────────────────────────────── */
+
+.celestial-grain {
+  background-image: radial-gradient(rgba(13, 30, 56, 0.035) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #ddecfa;
+}
+::-webkit-scrollbar-thumb {
+  background: #9abedb;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #6494c2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* DEBUG: Force fonts with maximum specificity */
+body,
+body * {
+  font-family: 'StenzGraxon', sans-serif !important;
+}
+
+h1, h2, h3, h4, h5, h6,
+h1 *, h2 *, h3 *, h4 *, h5 *, h6 * {
+  font-family: 'Ciberus', sans-serif !important;
+}
+
+.logo,
+.brand,
+[class*="logo"],
+[class*="brand"] {
+  font-family: 'Jeanoti', sans-serif !important;
+}
