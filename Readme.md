@@ -42,94 +42,9 @@
 
 ## 🏗️ System Architecture
 
-```mermaid
-flowchart TD
-    %% SENSOR LAYER
-    subgraph SENSOR_LAYER["Sensor Layer"]
-        MPU["MPU6050<br/>(Motion Data: X, Y, Z)"]
-        MAX["MAX30102<br/>(SpO2 & Heart Rate Data)"]
-        ESP["ESP32 Microcontroller<br/>(Real-Time Sensory Processing)"]
-        
-        MPU -->|"Motion Data (X, Y, Z)"| ESP
-        MAX -->|"SpO2 & HR Data"| ESP
-    end
-
-    JSON_PKT["JSON Data Packet"]
-    ESP --> JSON_PKT
-
-    %% STORAGE & API LAYER
-    subgraph DATA_API_LAYER["Data & API Layer"]
-        DB[("Database<br/>(Time-Series / Relational)")]
-        API{{"Central API Gateway<br/>(FastAPI / WebSocket)"}}
-        
-        JSON_PKT --> DB
-        DB <--> API
-    end
-
-    %% SECURITY LAYER
-    subgraph SECURITY_LAYER["Security Layer"]
-        HC["Health Check Protocol"]
-        HP["Hashing Protocol"]
-        AP["Authentication Protocol"]
-        
-        HC --- HP --- AP
-    end
-    API <--> SECURITY_LAYER
-
-    %% ML LAYER
-    subgraph ML_LAYER["Machine Learning Layer"]
-        FE["Feature Extraction"]
-        AE["Attribute Extraction"]
-        PRE["Pre-Processing<br/>(Iterative Processed Data)"]
-        RAW["Raw Data"]
-        MLM{{"ML Sleep Stage Model"}}
-        STAGE_DATA[("Classified Sleep Stages Data")]
-
-        FE --> PRE
-        AE --> PRE
-        RAW <--> MLM
-        PRE <--> MLM
-        MLM <--> STAGE_DATA
-    end
-    API <--> ML_LAYER
-
-    %% ALARM LAYER
-    subgraph ALARM_LAYER["Alarm Layer"]
-        SWE["Sleep Wake Engine<br/>(Checks for Sleep Cycle)"]
-        DECISION{"N1 / N2<br/>Target Stage?"}
-        TRIG_ALARM["Trigger Alarm"]
-        TRIG_FLAG["Trigger Flag"]
-        ALARM_CONN["Alarm Connector<br/>(Hardware / Notification)"]
-
-        SWE --> DECISION
-        DECISION -- "Yes" --> TRIG_ALARM
-        TRIG_ALARM --> TRIG_FLAG --> ALARM_CONN
-        DECISION -- "No (Monitor for N1/N2)" --> SWE
-    end
-    API --> ALARM_LAYER
-
-    %% FRONT END LAYER
-    subgraph FRONTEND_LAYER["Front End Layer"]
-        USER(["User"])
-        
-        subgraph DASHBOARD["Dashboard"]
-            ANALYTICS["Analytics"]
-            LIVE_MONITOR["Live Monitor"]
-            ALARM_SETTINGS["Smart Alarm Settings"]
-        end
-        
-        AI_CHAT["AI Chat Interface"]
-        SLEEP_REPORT["Sleep Report Generator"]
-        EXPORT_UI["Export Interface"]
-        EXPORT_FILES["Export Formats<br/>(JSON / PDF)"]
-
-        USER <--> DASHBOARD
-        USER <--> AI_CHAT
-        DASHBOARD <--> EXPORT_UI --> EXPORT_FILES
-        DASHBOARD <--> SLEEP_REPORT
-    end
-    API <--> FRONTEND_LAYER
-```
+<p align="center">
+  <img src="Somnus 1.drawio.png" alt="Somnus System Architecture" width="100%" />
+</p>
 
 ### Architectural Layer Breakdown
 
