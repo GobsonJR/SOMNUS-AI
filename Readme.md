@@ -43,7 +43,7 @@
 ## 🏗️ System Architecture
 
 <p align="center">
-  <img src="Somnus 1.drawio.png" alt="Somnus System Architecture" width="100%" />
+  <img src="https://github.com/hariharasudhan-29507/SOMNUS-AI/blob/main/Somnus%201.drawio.png" alt="Somnus System Architecture" width="100%" />
 </p>
 
 ### Architectural Layer Breakdown
