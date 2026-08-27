@@ -1,4 +1,4 @@
-# 🌙 Somnus — Smart Sleep Stage Monitor & Intelligent Wake System
+# Somnus — AI based Smart Sleep Stage Monitoring & Intelligent Wake System
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
