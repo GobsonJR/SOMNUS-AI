@@ -42,51 +42,122 @@
 
 ## 🏗️ System Architecture
 
+```mermaid
+flowchart TD
+    %% SENSOR LAYER
+    subgraph SENSOR_LAYER["Sensor Layer"]
+        MPU["MPU6050<br/>(Motion Data: X, Y, Z)"]
+        MAX["MAX30102<br/>(SpO2 & Heart Rate Data)"]
+        ESP["ESP32 Microcontroller<br/>(Real-Time Sensory Processing)"]
+        
+        MPU -->|"Motion Data (X, Y, Z)"| ESP
+        MAX -->|"SpO2 & HR Data"| ESP
+    end
+
+    JSON_PKT["JSON Data Packet"]
+    ESP --> JSON_PKT
+
+    %% STORAGE & API LAYER
+    subgraph DATA_API_LAYER["Data & API Layer"]
+        DB[("Database<br/>(Time-Series / Relational)")]
+        API{{"Central API Gateway<br/>(FastAPI / WebSocket)"}}
+        
+        JSON_PKT --> DB
+        DB <--> API
+    end
+
+    %% SECURITY LAYER
+    subgraph SECURITY_LAYER["Security Layer"]
+        HC["Health Check Protocol"]
+        HP["Hashing Protocol"]
+        AP["Authentication Protocol"]
+        
+        HC --- HP --- AP
+    end
+    API <--> SECURITY_LAYER
+
+    %% ML LAYER
+    subgraph ML_LAYER["Machine Learning Layer"]
+        FE["Feature Extraction"]
+        AE["Attribute Extraction"]
+        PRE["Pre-Processing<br/>(Iterative Processed Data)"]
+        RAW["Raw Data"]
+        MLM{{"ML Sleep Stage Model"}}
+        STAGE_DATA[("Classified Sleep Stages Data")]
+
+        FE --> PRE
+        AE --> PRE
+        RAW <--> MLM
+        PRE <--> MLM
+        MLM <--> STAGE_DATA
+    end
+    API <--> ML_LAYER
+
+    %% ALARM LAYER
+    subgraph ALARM_LAYER["Alarm Layer"]
+        SWE["Sleep Wake Engine<br/>(Checks for Sleep Cycle)"]
+        DECISION{"N1 / N2<br/>Target Stage?"}
+        TRIG_ALARM["Trigger Alarm"]
+        TRIG_FLAG["Trigger Flag"]
+        ALARM_CONN["Alarm Connector<br/>(Hardware / Notification)"]
+
+        SWE --> DECISION
+        DECISION -- "Yes" --> TRIG_ALARM
+        TRIG_ALARM --> TRIG_FLAG --> ALARM_CONN
+        DECISION -- "No (Monitor for N1/N2)" --> SWE
+    end
+    API --> ALARM_LAYER
+
+    %% FRONT END LAYER
+    subgraph FRONTEND_LAYER["Front End Layer"]
+        USER(["User"])
+        
+        subgraph DASHBOARD["Dashboard"]
+            ANALYTICS["Analytics"]
+            LIVE_MONITOR["Live Monitor"]
+            ALARM_SETTINGS["Smart Alarm Settings"]
+        end
+        
+        AI_CHAT["AI Chat Interface"]
+        SLEEP_REPORT["Sleep Report Generator"]
+        EXPORT_UI["Export Interface"]
+        EXPORT_FILES["Export Formats<br/>(JSON / PDF)"]
+
+        USER <--> DASHBOARD
+        USER <--> AI_CHAT
+        DASHBOARD <--> EXPORT_UI --> EXPORT_FILES
+        DASHBOARD <--> SLEEP_REPORT
+    end
+    API <--> FRONTEND_LAYER
 ```
-                                  PHYSICAL LAYER
-                        ┌─────────────────────────────────┐
-                        │   AD8232 Single-Lead ECG Sensor │
-                        └───────────────┬─────────────────┘
-                                        │ Analog ECG Signal (3.3V)
-                                        ▼
-                        ┌─────────────────────────────────┐
-                        │      ESP32 Microcontroller      │
-                        │  - 250 Hz ADC Sampling          │
-                        │  - Pan-Tompkins QRS Detector    │
-                        │  - 30-Second RR Epoch Packager  │
-                        └───────────────┬─────────────────┘
-                                        │ MQTT over Wi-Fi (JSON)
-                                        ▼
-                                TRANSPORT & BROKER
-                        ┌─────────────────────────────────┐
-                        │    Eclipse Mosquitto (Broker)   │
-                        │    Topic: somnus/rr/<device_id> │
-                        └───────────────┬─────────────────┘
-                                        │
-                         BACKEND LAYER  ▼  (FastAPI Microservice)
- ┌─────────────────────────────────────────────────────────────────────────────┐
- │ FastAPI Core Engine                                                         │
- │                                                                             │
- │   ┌───────────────────┐      ┌────────────────────┐      ┌───────────────┐  │
- │   │  MQTT Ingestor &  │ ───> │  HRV Feature Eng.  │ ───> │ ONNX Runtime  │  │
- │   │ Artifact Cleaner  │      │ (Time / Freq / NL) │      │  (XGBoost)    │  │
- │   └───────────────────┘      └────────────────────┘      └───────┬───────┘  │
- │                                                                  │          │
- │   ┌──────────────────────────────────────────────────────────────┘          │
- │   ▼                                                                         │
- │ ┌───────────────────┐         ┌───────────────────┐      ┌───────────────┐  │
- │ │  Smart Wake Logic │ ──────> │ WebSocket Gateway │      │   Database    │  │
- │ │ (K-Consecutive N2)│         │   & Event Bus     │      │   Manager     │  │
- │ └─────────┬─────────┘         └─────────┬─────────┘      └───────┬───────┘  │
- └───────────┼─────────────────────────────┼────────────────────────┼──────────┘
-             │ MQTT Alarm Trigger          │ WebSockets             │ SQLAlchemy
-             ▼                             ▼                        ▼
- ┌───────────────────────┐   ┌──────────────────────────┐   ┌──────────────────┐
- │ ESP32 Buzzer / Light  │   │ React Frontend Dashboard │   │ Redis (State)    │
- │ (Physical Wake Alarm) │   │ (Hypnogram & Live Telemetry)│ PostgreSQL +       │
- └───────────────────────┘   └──────────────────────────┘   │ TimescaleDB      │
-                                                            └──────────────────┘
+
+### Architectural Layer Breakdown
+
 ```
+ ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 1. SENSOR LAYER                                                                                        │
+ │    • MPU6050 (3-Axis Accelerometer / Gyroscope) ──> Motion Vectors (X, Y, Z)                           │
+ │    • MAX30102 / AD8232 (Optical PPG / ECG Sensor) ──> SpO2, Heart Rate, & RR Interval Stream           │
+ │    • ESP32 Microcontroller ──> Edge Sampling, Validation & JSON Data Packet Serialization             │
+ └────────────────────────────────────────────────┬───────────────────────────────────────────────────────┘
+                                                  │
+                                                  ▼
+ ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 2. DATA & API LAYER                                                                                    │
+ │    • Central Database: Persistent time-series epochs, physiological trends, and user preferences       │
+ │    • Central API Hub: Asynchronous REST endpoints, WebSocket telemetry broadcast & event coordination │
+ └───────┬───────────────────────────────┬───────────────────────────────┬───────────────────────────────┬┘
+         │                               │                               │                               │
+         ▼                               ▼                               ▼                               ▼
+ ┌───────────────────────┐ ┌───────────────────────────┐ ┌───────────────────────────┐ ┌─────────────────┐
+ │ 3. SECURITY LAYER     │ │ 4. MACHINE LEARNING LAYER │ │ 5. ALARM LAYER            │ │ 6. FRONTEND     │
+ │ • Health Check Proto  │ │ • Feature & Attribute Ext │ │ • Sleep Wake Engine       │ │ • Live Monitor  │
+ │ • Hashing Protocol    │ │ • Pre-Processing Pipeline │ │ • N1/N2 Threshold Check   │ │ • Analytics     │
+ │ • Authentication Proto│ │ • ML Model Inference      │ │ • Trigger Flag Dispatch   │ │ • Smart Alarm   │
+ │                       │ │ • Stage Classification    │ │ • Alarm Connector Hook    │ │ • AI Chat / Rpt │
+ └───────────────────────┘ └───────────────────────────┘ └───────────────────────────┘ └─────────────────┘
+```
+
 ---
 
 ## 🔄 End-to-End Data Pipeline
