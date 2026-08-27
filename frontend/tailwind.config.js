@@ -31,12 +31,12 @@ export default {
         pill: "9999px",
       },
       fontFamily: {
-        ciberus: ['"Ciberus"', "sans-serif"],
-        jeanoti: ['"Jeanoti"', "cursive", "sans-serif"],
+        ciberus: ['"CiberusDemo"', '"Ciberus"', "sans-serif"],
+        jeanoti: ['"JeanotiRegular"', '"Jeanoti"', "sans-serif"],
         stenz: ['"StenzGraxon"', "sans-serif"],
         nineties: ['"BehindTheNineties"', "sans-serif"],
         sans: ['"StenzGraxon"', "system-ui", "sans-serif"],
-        serif: ['"Ciberus"', "Georgia", "serif"],
+        serif: ['"CiberusDemo"', '"Ciberus"', "Georgia", "serif"],
         mono: ['"BehindTheNineties"', "monospace"],
       },
       letterSpacing: {
