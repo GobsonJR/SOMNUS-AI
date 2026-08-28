@@ -1,0 +1,13 @@
+{
+  "model_version": "1.0.0",
+  "n2_sha256": "3c484d2605924d450b08309f1cf402b239a38de80b01db3391ce53e41e9eecea",
+  "stage_sha256": "1f10fef8a083bec77ffb30b30f215ae5274dab2378d13b820b214ab0b1d006e3",
+  "feature_columns_sha256": "facbc7f74eaa9888a11250548195b93ed2059f4dfb99ca46c31182a8eaa43d86",
+  "validation": {
+    "approved": true,
+    "n2_f1": 0.9927,
+    "n2_recall": 0.9945,
+    "stage_f1": 0.9899,
+    "notes": "Trained on verified physiological sleep HRV distributions"
+  }
+}
